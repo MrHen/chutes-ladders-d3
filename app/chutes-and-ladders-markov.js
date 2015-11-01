@@ -36,40 +36,39 @@ var transitionPairs = _.pairs(transitions);
 var ladders = _.filter(transitionPairs, function(v) { return v[0] < v[1];});
 var chutes = _.filter(transitionPairs, function(v) { return v[0] > v[1];});
 
-var die = 6;
+// https://boardgamegeek.com/article/3959568#3959568
+//d4 - 1st gear 1,1,2,2
+//d6 - 2nd gear 2,3,3,4,4,4
+//d8 - 3rd gear 4,5,6,6,7,7,8,8
+//d12 - 4th gear the numbers 7 through 12 twice
+//d20 - 5th gear the numbers 11 through 20 twice
+//d30 - 6th gear the numbers 21 through 30 three times
+
+var dice = [
+    [1,2],
+    [2,3,3,4,4,4],
+    [4,5,6,6,7,7,8,8],
+    [7,8,9,10,11,12],
+    [11,12,13,14,15,16,17,18,19,20],
+    [21,22,23,24,25,26,27,28,29,30]
+];
 
 function getFraction(a, b) {
     return config.use_fractions ? math.fraction(a, b) : a / b;
 }
 
-function getOdds(i, j, debug) {
-    var odds = 0;
-    if (j === i && i === (placeCount - 1)) {
-        odds = 1;
-        if (debug) console.log('at end', i, j, odds);
-    } else if (j <= i) {
-        odds = 0;
-        if (debug) console.log('backwards', i, j, odds);
-    } else if (j > (i + die)) {
-        odds = 0;
-        if (debug) console.log('too far away', i, j, odds);
-    } else if (((i + die) >= placeCount) && j === (placeCount - 1)) {
-        odds = getFraction((i + die - placeCount + 2), die);
-        if (debug) console.log('end clump', i, j, odds);
-    } else {
-        odds = getFraction(1, die);
-        if (debug) console.log('success', i, j, odds);
-    }
-    return odds;
-}
-
-function getTransitions(count, jumps) {
+function getTransitions(count, jumps, die) {
     var T = [];
 
     for (var i = 0; i < count; i++) {
-        var dest = [];
-        for (var j = 0; j < count; j++) {
-            dest.push(getOdds(i, j));
+        var dest = _.fill(Array(placeCount), 0);
+
+        for (var j = 0; j < die.length; j++) {
+            var end = i + die[j];
+            if (end >= placeCount) {
+                end = placeCount - 1;
+            }
+            dest[end] = math.add(dest[end], getFraction(1, die.length));
         }
 
         for (var key in jumps) {
@@ -106,11 +105,9 @@ function getBoards(T, moves) {
     return boards;
 }
 
-var T = getTransitions(placeCount, transitions);
+var T = _.map(dice, function(die) { return getTransitions(placeCount, transitions, die)});
 
-//console.log("created initial table", T);
-
-var boards = getBoards(T, 50);
+var boards = getBoards(T[1], 50);
 
 function listEquals(a, b) {
     if (a && b) {
