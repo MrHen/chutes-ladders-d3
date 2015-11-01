@@ -1,3 +1,5 @@
+
+
             //----------------
             // Todo:
             // * Refactor some repetitive code.
@@ -52,7 +54,7 @@
                 .attr("shape-rendering", "crispEdges");
 
             // Add chutes and ladders
-            var ladders = [[1,38],[4,14],[9,31],[21,42],[28,84],[36,44],[51,67],[71,91],[80,100]];
+            //var ladders = [[1,38],[4,14],[9,31],[21,42],[28,84],[36,44],[51,67],[71,91],[80,100]];
 
             // Add arrow marker elements
             var arrowlist = [chutecolor,laddercolor]
@@ -86,7 +88,7 @@
                 // Add end arrows
                 .attr("marker-end","url(#ladder-end)");
 
-            var chutes = [[98,78],[95,75],[93,73],[87,24],[64,60],[62,19],[56,53],[49,11],[48,26],[16,6]];
+            //var chutes = [[98,78],[95,75],[93,73],[87,24],[64,60],[62,19],[56,53],[49,11],[48,26],[16,6]];
             // Concatenate chutes and ladders to draw chutes
             ladders.push.apply(ladders,chutes)
             board.selectAll("line")
@@ -160,18 +162,26 @@
                 };
 
 
+            var saved;
             // Loop through JSON imported data
             d3.json("markovboards.json",function(json){
+                saved = json;
+                if (boards) {
+                    console.log('loading data from places', boards.length);
+                    board.on("click", function(){return animateboardloop(boards);});
+                } else {
+                    console.log('loading data from .json', json.length);
                     board.on("click", function(){return animateboardloop(json);});
-                })
+                }
+            });
 
             // Board animation test
             //board.on("click", function(){return animateboardloop(dsets);});
 
             function animateboardloop(dsets) {
-                //console.log(dsets[dset]);
                 animatestart();
                 for (var k in dsets){
+                    //console.log(dsets[k]);
                     animateboard(dsets[k], k);
                     animateline(dsets[k], k);
                     animatecounter(k);
@@ -184,7 +194,10 @@
                 .transition()
                     .delay(500*k)
                     .duration(500)
-                    .attr("fill", function(d) {return "rgb(255," + Math.round(255-d*200.0/1) + "," + Math.round(255-d*200.0/1) + ")";}) // Red
+                    .attr("fill", function(d) {
+                        //console.log('animateboard', d);
+                        return "rgb(255," + Math.round(255*(1-d)) + "," + Math.round(255*(1-d)) + ")";
+                    }) // Red
                     //.attr("fill", function(d) {return "rgb(" + Math.round(255-d*200.0/1) + "," + Math.round(255-d*200.0/1) + ",255)";}) // Blue
                 };
 
