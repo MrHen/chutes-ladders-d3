@@ -146,7 +146,7 @@ function listEquals(a, b) {
 
 function sumCheck(a) {
     for (var i = 0; i < a.length; i++) {
-        if (math.sum(a[i]) != 1) {
+        if (!math.equal(math.sum(a[i]), 1)) {
             console.log("sum failed", i, math.sum(a[i]));
         }
     }
