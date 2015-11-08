@@ -3,14 +3,21 @@ var cols = 10;
 var rows = cells / 10;
 
 // Board parameters
-var w = 50 * cols;
-var h = 50 * rows;
-var spacew = w/cols;
-var spaceh = h/rows;
-var pad = 1;
-var boardfontsize = 16;
-var chutecolor = "tomato";
-var laddercolor = "yellowgreen";
+var UX_CONFIG = {
+    boardfontsize: 16,
+    boardheight: 50 * rows,
+    boardwidth: 50 * cols,
+
+    colors: {
+        chutes: 'tomato',
+        ladders: 'yellowgreen'
+    },
+
+    pad: 1
+};
+
+UX_CONFIG.spaceh = UX_CONFIG.boardheight / rows;
+UX_CONFIG.spacew = UX_CONFIG.boardwidth / cols;
 
 //Data
 // Starting board of zeros
@@ -19,14 +26,14 @@ var dataset0 = _.fill(Array(cells), 0.0);
 // Create SVG of board
 var board = d3.select("#board")
     .append("svg")
-    .attr("width",w)
-    .attr("height",h);
+    .attr("width", UX_CONFIG.boardwidth)
+    .attr("height", UX_CONFIG.boardheight);
 
 var rects = createRects(board, dataset0);
 
-createArrowMarkers(board, chutecolor, "chute-end");
-createArrowMarkers(board, laddercolor, "ladder-end");
-createArrows(board, transitionPairs, laddercolor, "url(#ladder-end)", chutecolor, "url(#chute-end)");
+createArrowMarkers(board, UX_CONFIG.colors.chutes, "chute-end");
+createArrowMarkers(board, UX_CONFIG.colors.ladders, "ladder-end");
+createArrows(board, transitionPairs, UX_CONFIG.colors.ladders, "url(#ladder-end)", UX_CONFIG.colors.chutes, "url(#chute-end)");
 
 createCellLabels(board);
 
@@ -45,7 +52,7 @@ board.append("rect")
     .attr("x",spacex(0,0))
     .attr("y",spacey(0,0))
     .attr("width",2)
-    .attr("height",spaceh)
+    .attr("height", UX_CONFIG.spaceh)
     .attr("fill", "none")
     .attr("stroke","red")
     .attr("stroke-width", 2.0)
@@ -69,14 +76,14 @@ d3.json("markovboards.json",function(json){
 // The spaces wind up the board from lower left to upper left on 10x10 board.
 function spacex(d,i) {
     if (i % 20 < 10) {
-        return (i * spacew % w) + pad;
+        return (i * UX_CONFIG.spacew % UX_CONFIG.boardwidth) + UX_CONFIG.pad;
     } else {
-        return (w - spacew - (i * spacew % w)) + pad;
+        return (UX_CONFIG.boardwidth - UX_CONFIG.spacew - (i * UX_CONFIG.spacew % UX_CONFIG.boardwidth)) + UX_CONFIG.pad;
     }
 }
 
 function spacey(d,i) {
-    return (h - spaceh - Math.floor(i / cols) * spaceh) + pad;
+    return (UX_CONFIG.boardheight - UX_CONFIG.spaceh - Math.floor(i / cols) * UX_CONFIG.spaceh) + UX_CONFIG.pad;
 }
 
 // Create spaces on board (rows, then spaces)
@@ -87,8 +94,8 @@ function createRects(board, data) {
         .append("rect")
         .attr("x",spacex)
         .attr("y",spacey)
-        .attr("width",spacew-2*pad)
-        .attr("height",spaceh-2*pad)
+        .attr("width",UX_CONFIG.spacew - 2*UX_CONFIG.pad)
+        .attr("height",UX_CONFIG.spaceh - 2*UX_CONFIG.pad)
         .attr("fill", "white")
         .attr("stroke","silver")
         .attr("stroke-width", 1.0)
@@ -123,13 +130,13 @@ function createArrows(board, transitions, laddercolor, laddermarker, chutecolor,
             return labelx(d[0] - 1, d[0] - 1);
         })
         .attr("y1", function (d) {
-            return labely(d[0] - 1, d[0] - 1) - boardfontsize / 3;
+            return labely(d[0] - 1, d[0] - 1) - UX_CONFIG.boardfontsize / 3;
         })
         .attr("x2", function (d) {
             return labelx(d[1] - 1, d[1] - 1);
         })
         .attr("y2", function (d) {
-            return labely(d[1] - 1, d[1] - 1) - boardfontsize / 3;
+            return labely(d[1] - 1, d[1] - 1) - UX_CONFIG.boardfontsize / 3;
         })
         .attr("stroke", function (d) {
             return d[0] < d[1] ? laddercolor : chutecolor;
@@ -145,10 +152,10 @@ function createArrows(board, transitions, laddercolor, laddermarker, chutecolor,
 // Add number labels to each space
 
 function labelx(d,i) {
-    return spacex(d,i) + spacew/2;
+    return spacex(d,i) + UX_CONFIG.spacew/2;
 }
 function labely(d,i) {
-    return spacey(d,i) + spaceh/2 + boardfontsize/3;
+    return spacey(d,i) + UX_CONFIG.spaceh/2 + UX_CONFIG.boardfontsize/3;
 }
 
 function createCellLabels(board) {
@@ -161,7 +168,7 @@ function createCellLabels(board) {
         .attr("x", labelx)
         .attr("y", labely)
         .attr("font-family", "sans-serif")
-        .attr("font-size", boardfontsize)
+        .attr("font-size", UX_CONFIG.boardfontsize)
         .attr("font-weight", "bold")
         .attr("fill", "dimgray");
 }
@@ -203,7 +210,7 @@ function animateboard(dset,k, delay) {
 
 var plotsvgheight = 160;
 var plotheight = 100;
-var plotsvgwidth = w;
+var plotsvgwidth = UX_CONFIG.boardwidth;
 var plotwidth = plotsvgwidth - 80;
 
 var lineplot = d3.select("#lineplot")
