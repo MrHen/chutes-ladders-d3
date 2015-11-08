@@ -175,21 +175,22 @@ d3.json("markovboards.json",function(json){
 //board.on("click", function(){return animateboardloop(dsets);});
 
 function animateboardloop(dsets) {
+    var delay = 500;
     animatestart();
     for (var k in dsets) {
-        animateboard(dsets[k], k);
-        animateline(dsets[k], k);
-        animatecounter(k);
-        animatewin(dsets[k], k);
+        animateboard(dsets[k], k, delay);
+        animateline(dsets[k], k, delay);
+        animatecounter(k, delay);
+        animatewin(dsets[k], k, delay);
     }
 }
 
-function animateboard(dset,k) {
+function animateboard(dset,k, delay) {
     var max = _.max(dset);
     rects.data(dset)
         .transition()
-        .delay(500 * k)
-        .duration(500)
+        .delay(delay * k)
+        .duration(delay)
         .attr("fill", function (d) {
             return "rgb(255," + Math.round(255 * (1 - d/max)) + "," + Math.round(255 * (1 - d/max)) + ")";
         });
@@ -302,11 +303,11 @@ function createYAxis(plot, y) {
 }
 
 // Animate line plot
-function animateline(dset,k) {
+function animateline(dset, k, delay) {
     d3.select("#lineplot #plot")
         .transition()
-        .delay(500 * k)
-        .duration(500)
+        .delay(delay * k)
+        .duration(delay)
         .attr("d", line(dset))
 }
 
@@ -329,11 +330,11 @@ var counter = d3.select("#counter")
     .attr("fill", "dimgray");
 
 // Animate counter
-function animatecounter(k) {
+function animatecounter(k, delay) {
     d3.select("#counter text")
     .transition()
-        .delay(500*k)
-        .duration(500)
+        .delay(delay * k)
+        .duration(delay)
         .text(parseInt(k)+1)
     };
 
@@ -355,10 +356,10 @@ var counter = d3.select("#win")
     .attr("fill", "dimgray");
 
 // Animate chance
-function animatewin(dset,k) {
+function animatewin(dset, k, delay) {
     d3.select("#win text")
     .transition()
-        .delay(500*k)
-        .duration(500)
+        .delay(delay * k)
+        .duration(delay)
         .text((parseFloat(dset[cells - 1])*100).toFixed(2) + "%")
     };
