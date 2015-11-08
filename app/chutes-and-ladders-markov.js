@@ -132,7 +132,7 @@ function listEquals(a, b) {
                     console.log("  (nested)", i);
                     //return false;
                 }
-            } else if (a[i] != b[i]) {
+            } else if (!math.equal(a[i], b[i])) {
                 console.log("mismatch", i, a[i], b[i]);
                 return false;
             }
