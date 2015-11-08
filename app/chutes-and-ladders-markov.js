@@ -4,7 +4,8 @@
 
 var config = {
     use_fractions: true,
-    post_convert: true
+    post_convert: true,
+    loop: false
 };
 
 var placeCount = 100 + 1;
@@ -66,7 +67,11 @@ function getTransitions(count, jumps, die) {
         for (var j = 0; j < die.length; j++) {
             var end = i + die[j];
             if (end >= placeCount) {
-                end = placeCount - 1;
+                if (config.loop) {
+                    end = end % placeCount;
+                } else {
+                    end = placeCount - 1;
+                }
             }
             dest[end] = math.add(dest[end], getFraction(1, die.length));
         }
