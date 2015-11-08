@@ -12,6 +12,59 @@ var boardfontsize = 16;
 var chutecolor = "tomato";
 var laddercolor = "yellowgreen";
 
+//Data
+// Starting board of zeros
+var dataset0 = _.fill(Array(cells), 0.0);
+
+// Create SVG of board
+var board = d3.select("#board")
+    .append("svg")
+    .attr("width",w)
+    .attr("height",h);
+
+var rects = createRects(board, dataset0);
+
+createArrowMarkers(board, chutecolor, "chute-end");
+createArrowMarkers(board, laddercolor, "ladder-end");
+createArrows(board, transitionPairs, laddercolor, "url(#ladder-end)", chutecolor, "url(#chute-end)");
+
+createCellLabels(board);
+
+board.append("text")
+    .attr("x", labelx(0,cells - 1))
+    .attr("y", labely(0,cells - 1)-15)
+    .style("fill", "silver")
+    //.attr("font-weight", "bold")
+    .attr("text-anchor", "middle")
+    .text("Finish");
+
+// Add start indicator at edge of first space.
+// Remove when animation starts.
+board.append("rect")
+    .attr("id","starter")
+    .attr("x",spacex(0,0))
+    .attr("y",spacey(0,0))
+    .attr("width",2)
+    .attr("height",spaceh)
+    .attr("fill", "none")
+    .attr("stroke","red")
+    .attr("stroke-width", 2.0)
+    .attr("stroke-opacity", 0.5)
+    .attr("shape-rendering", "crispEdges");
+
+var saved;
+// Loop through JSON imported data
+d3.json("markovboards.json",function(json){
+    saved = json;
+    if (boards) {
+        console.log('loading data from places', boards.length);
+        board.on("click", function(){return animateboardloop(boards);});
+    } else {
+        console.log('loading data from .json', json.length);
+        board.on("click", function(){return animateboardloop(json);});
+    }
+});
+
 // Functions to place data / labels / obstacles in correct position on C&L board.
 // The spaces wind up the board from lower left to upper left on 10x10 board.
 function spacex(d,i) {
@@ -25,17 +78,6 @@ function spacex(d,i) {
 function spacey(d,i) {
     return (h - spaceh - Math.floor(i / cols) * spaceh) + pad;
 }
-
-
-//Data
-// Starting board of zeros
-var dataset0 = _.fill(Array(cells), 0.0);
-
-// Create SVG of board
-var board = d3.select("#board")
-    .append("svg")
-    .attr("width",w)
-    .attr("height",h);
 
 // Create spaces on board (rows, then spaces)
 function createRects(board, data) {
@@ -55,12 +97,6 @@ function createRects(board, data) {
 
     return rects;
 }
-
-var rects = createRects(board, dataset0);
-
-createArrowMarkers(board, chutecolor, "chute-end");
-createArrowMarkers(board, laddercolor, "ladder-end");
-createArrows(board, transitionPairs, laddercolor, "url(#ladder-end)", chutecolor, "url(#chute-end)");
 
 // Add arrow marker elements
 function createArrowMarkers(board, color, id) {
@@ -108,8 +144,12 @@ function createArrows(board, transitions, laddercolor, laddermarker, chutecolor,
 
 // Add number labels to each space
 
-function labelx(d,i){return spacex(d,i) + spacew/2;}
-function labely(d,i){return spacey(d,i) + spaceh/2 + boardfontsize/3;}
+function labelx(d,i) {
+    return spacex(d,i) + spacew/2;
+}
+function labely(d,i) {
+    return spacey(d,i) + spaceh/2 + boardfontsize/3;
+}
 
 function createCellLabels(board) {
     board.selectAll("text")
@@ -126,57 +166,19 @@ function createCellLabels(board) {
         .attr("fill", "dimgray");
 }
 
-createCellLabels(board);
-
-board.append("text")
-    .attr("x", labelx(0,cells - 1))
-    .attr("y", labely(0,cells - 1)-15)
-    .style("fill", "silver")
-    //.attr("font-weight", "bold")
-    .attr("text-anchor", "middle")
-    .text("Finish");
-
-// Add start indicator at edge of first space.
-// Remove when animation starts.
-board.append("rect")
-    .attr("id","starter")
-    .attr("x",spacex(0,0))
-    .attr("y",spacey(0,0))
-    .attr("width",2)
-    .attr("height",spaceh)
-    .attr("fill", "none")
-    .attr("stroke","red")
-    .attr("stroke-width", 2.0)
-    .attr("stroke-opacity", 0.5)
-    .attr("shape-rendering", "crispEdges");
-
-function animatestart(){
+function animatestart(delay) {
     d3.select("#starter")
-    .transition()
-        .duration(500)
+        .transition()
+        .duration(delay)
         .attr("stroke-opacity", 0.0);
-    };
-
-
-var saved;
-// Loop through JSON imported data
-d3.json("markovboards.json",function(json){
-    saved = json;
-    if (boards) {
-        console.log('loading data from places', boards.length);
-        board.on("click", function(){return animateboardloop(boards);});
-    } else {
-        console.log('loading data from .json', json.length);
-        board.on("click", function(){return animateboardloop(json);});
-    }
-});
+}
 
 // Board animation test
 //board.on("click", function(){return animateboardloop(dsets);});
 
 function animateboardloop(dsets) {
     var delay = 500;
-    animatestart();
+    animatestart(delay);
     for (var k in dsets) {
         animateboard(dsets[k], k, delay);
         animateline(dsets[k], k, delay);
@@ -195,7 +197,6 @@ function animateboard(dset,k, delay) {
             return "rgb(255," + Math.round(255 * (1 - d/max)) + "," + Math.round(255 * (1 - d/max)) + ")";
         });
 }
-
 
 //------------------------------------------------
 // Create SVG line plot of board probabilities
