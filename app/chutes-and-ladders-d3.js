@@ -16,12 +16,15 @@ var UX_CONFIG = {
     pad: 1
 };
 
-UX_CONFIG.spaceh = UX_CONFIG.boardheight / rows;
-UX_CONFIG.spacew = UX_CONFIG.boardwidth / cols;
+UX_CONFIG.cells = cells;
+UX_CONFIG.cols = cols;
+UX_CONFIG.rows = rows;
+UX_CONFIG.spaceh = UX_CONFIG.boardheight / UX_CONFIG.rows;
+UX_CONFIG.spacew = UX_CONFIG.boardwidth / UX_CONFIG.cols;
 
 //Data
 // Starting board of zeros
-var dataset0 = _.fill(Array(cells), 0.0);
+var dataset0 = _.fill(Array(UX_CONFIG.cells), 0.0);
 
 // Create SVG of board
 var board = d3.select("#board")
@@ -38,8 +41,8 @@ createArrows(board, transitionPairs, UX_CONFIG.colors.ladders, "url(#ladder-end)
 createCellLabels(board);
 
 board.append("text")
-    .attr("x", labelx(0,cells - 1))
-    .attr("y", labely(0,cells - 1)-15)
+    .attr("x", labelx(0,UX_CONFIG.cells - 1))
+    .attr("y", labely(0,UX_CONFIG.cells - 1)-15)
     .style("fill", "silver")
     //.attr("font-weight", "bold")
     .attr("text-anchor", "middle")
@@ -83,7 +86,7 @@ function spacex(d,i) {
 }
 
 function spacey(d,i) {
-    return (UX_CONFIG.boardheight - UX_CONFIG.spaceh - Math.floor(i / cols) * UX_CONFIG.spaceh) + UX_CONFIG.pad;
+    return (UX_CONFIG.boardheight - UX_CONFIG.spaceh - Math.floor(i / UX_CONFIG.cols) * UX_CONFIG.spaceh) + UX_CONFIG.pad;
 }
 
 // Create spaces on board (rows, then spaces)
@@ -369,5 +372,5 @@ function animatewin(dset, k, delay) {
     .transition()
         .delay(delay * k)
         .duration(delay)
-        .text((parseFloat(dset[cells - 1])*100).toFixed(2) + "%")
+        .text((parseFloat(dset[UX_CONFIG.cells - 1])*100).toFixed(2) + "%")
     };
