@@ -39,28 +39,8 @@ createArrowMarkers(board, UX_CONFIG.colors.ladders, "ladder-end");
 createArrows(board, transitionPairs, UX_CONFIG.colors.ladders, "url(#ladder-end)", UX_CONFIG.colors.chutes, "url(#chute-end)");
 
 createCellLabels(board);
-
-board.append("text")
-    .attr("x", labelx(0,UX_CONFIG.cells - 1))
-    .attr("y", labely(0,UX_CONFIG.cells - 1)-15)
-    .style("fill", "silver")
-    //.attr("font-weight", "bold")
-    .attr("text-anchor", "middle")
-    .text("Finish");
-
-// Add start indicator at edge of first space.
-// Remove when animation starts.
-board.append("rect")
-    .attr("id","starter")
-    .attr("x",spacex(0,0))
-    .attr("y",spacey(0,0))
-    .attr("width",2)
-    .attr("height", UX_CONFIG.spaceh)
-    .attr("fill", "none")
-    .attr("stroke","red")
-    .attr("stroke-width", 2.0)
-    .attr("stroke-opacity", 0.5)
-    .attr("shape-rendering", "crispEdges");
+createFinishLabel(board);
+createStartLabel(board);
 
 var saved;
 // Loop through JSON imported data
@@ -176,6 +156,31 @@ function createCellLabels(board) {
         .attr("fill", "dimgray");
 }
 
+function createFinishLabel(board) {
+    board.append("text")
+        .attr("x", labelx(0,UX_CONFIG.cells - 1))
+        .attr("y", labely(0,UX_CONFIG.cells - 1)-15)
+        .style("fill", "silver")
+        //.attr("font-weight", "bold")
+        .attr("text-anchor", "middle")
+        .text("Finish");
+}
+
+// Add start indicator at edge of first space.
+// Remove when animation starts.
+function createStartLabel(board) {
+    board.append("rect")
+        .attr("id","starter")
+        .attr("x",spacex(0,0))
+        .attr("y",spacey(0,0))
+        .attr("width",2)
+        .attr("height", UX_CONFIG.spaceh)
+        .attr("fill", "none")
+        .attr("stroke","red")
+        .attr("stroke-width", 2.0)
+        .attr("stroke-opacity", 0.5)
+        .attr("shape-rendering", "crispEdges");
+}
 function animatestart(delay) {
     d3.select("#starter")
         .transition()
