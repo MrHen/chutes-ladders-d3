@@ -110,6 +110,131 @@ function getBoards(T, moves) {
     return boards;
 }
 
+function getBoardsUsingPolicy(T, policy, moves) {
+    var L = _.fill(Array(placeCount), 0);
+    L[0] = 1;
+
+    var boards = [];
+
+    var odds = getOddsUsingPolicy(T, policy);
+
+    console.log('using odds', odds);
+
+    for (var i = 0; i < moves; i++) {
+        L = math.multiply(L,odds);
+
+        if (config.post_convert) {
+            //boards.push(_.map(L, function(n) { return 0 + n; }));
+            boards.push(_.map(L.slice(1), function(n) { return 0 + n; }));
+        } else {
+            //boards.push(L);
+            boards.push(L.slice(1));
+        }
+    }
+
+    return boards;
+}
+
+function getOddsUsingPolicy(T, policy) {
+    var odds = [];
+    for (var start = 0; start < placeCount; start++) {
+        odds.push(T[policy[start]][start]);
+    }
+    return odds;
+}
+
+var discountFactor = .9;
+
+function getPolicy(T, V) {
+    var policy = _.fill(Array(placeCount), 0);
+
+    console.log("getting policy");
+    for(var state = 0; state < placeCount; state++) {
+
+        var max = null;
+        var best = null;
+        for(var action = 0; action < T.length; action++) {
+
+            var sum = 0;
+            for(var next = 0; next < placeCount; next++) {
+                var prob = T[action][state][next];
+                if (prob === 0) {
+                    continue;
+                }
+
+                var reward = getReward(state, next);
+                var future = discountFactor * V[next];
+                sum += prob * (reward + future);
+            }
+
+            if (max === null || sum > max) {
+                max = sum;
+                best = action;
+            }
+        }
+        policy[state] = best;
+    }
+
+    return policy;
+}
+
+function nextPolicy(policies, T, V) {
+    var old = _.last(policies);
+    policies.push(getPolicy(T, V));
+    return old && math.deepEqual(old, _.last(policies));
+}
+
+function getValues(T, policy, old) {
+    var values = _.fill(Array(placeCount), 0);
+
+    console.log("getting values");
+    for (var state = 0; state < placeCount; state++) {
+        var action = policy[state];
+
+        var sum = 0;
+        for (var next = 0; next < placeCount; next++) {
+            var prob = T[action][state][next];
+            if (prob === 0) {
+                continue;
+            }
+
+            var reward = getReward(state, next);
+            var future = discountFactor * old[next];
+            sum += prob * (reward + future);
+        }
+        values[state] = sum;
+    }
+
+    return values;
+}
+
+function nextValues(V, T, policy) {
+    var old = _.last(V);
+    V.push(getValues(T, policy, old));
+    return old && math.deepEqual(old, _.last(V));
+}
+
+function findOptimalPolicy(T) {
+    var policies = [];
+    var V = [];
+    V.push(_.fill(Array(101), 0));
+
+    var max = 1000000;
+    console.log("starting...");
+    while(max && !nextPolicy(policies, T, _.last(V))) {
+        console.log("new policy", max);
+        while(--max && !nextValues(V, T, _.last(policies))) {
+            console.log("new values", max);
+        }
+    }
+
+    return {policies:policies, V:V};
+}
+
+function getReward(start, end) {
+    return (end >= (placeCount - 1)) ? 1 : 0;
+}
+
 var T = _.map(dice, function(die) { return getTransitions(placeCount, transitions, die)});
 
 var boards = getBoards(T[1], 50);
