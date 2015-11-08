@@ -13,7 +13,10 @@ var UX_CONFIG = {
         ladders: 'yellowgreen'
     },
 
-    pad: 1
+    pad: 1,
+
+    plotsvgheight: 160,
+    plotheight: 100
 };
 
 UX_CONFIG.cells = cells;
@@ -21,6 +24,9 @@ UX_CONFIG.cols = cols;
 UX_CONFIG.rows = rows;
 UX_CONFIG.spaceh = UX_CONFIG.boardheight / UX_CONFIG.rows;
 UX_CONFIG.spacew = UX_CONFIG.boardwidth / UX_CONFIG.cols;
+
+UX_CONFIG.plotsvgwidth = UX_CONFIG.boardwidth;
+UX_CONFIG.plotwidth = UX_CONFIG.plotsvgwidth - 80;
 
 //Data
 // Starting board of zeros
@@ -216,24 +222,19 @@ function animateboard(dset,k, delay) {
 //------------------------------------------------
 // Create SVG line plot of board probabilities
 
-var plotsvgheight = 160;
-var plotheight = 100;
-var plotsvgwidth = UX_CONFIG.boardwidth;
-var plotwidth = plotsvgwidth - 80;
-
 var lineplot = d3.select("#lineplot")
     .append("svg")
-    .attr("width", plotsvgwidth)
-    .attr("height", plotsvgheight);
+    .attr("width", UX_CONFIG.plotsvgwidth)
+    .attr("height", UX_CONFIG.plotsvgheight);
 
 // X scale will fit values from 1-100 within pixels 0-width
 var x = d3.scale.linear()
     .domain([1, 100])
-    .range([0, plotwidth]);
+    .range([0, UX_CONFIG.plotwidth]);
 // Y scale will fit values from 0-1 within pixels 0-100
 var y = d3.scale.linear()
     .domain([0, 1])
-    .range([plotheight, 0]);
+    .range([UX_CONFIG.plotheight, 0]);
 
 // Create a line object
 var line = d3.svg.line()
@@ -266,7 +267,7 @@ function createXAxis(plot, x) {
         .enter().append("text")
         .attr("class","xticks")
         .attr("x", x)
-        .attr("y", plotheight+15)
+        .attr("y", UX_CONFIG.plotheight+15)
         .style("fill", "dimgrey")
         .attr("text-anchor", "middle")
         .text(String)
@@ -274,8 +275,8 @@ function createXAxis(plot, x) {
 
     // x axis label
     plot.append("text")
-        .attr("x", (plotwidth)/2)
-        .attr("y", plotheight+37)
+        .attr("x", (UX_CONFIG.plotwidth)/2)
+        .attr("y", UX_CONFIG.plotheight+37)
         .style("fill", "dimgrey")
         //.attr("font-weight", "bold")
         .attr("text-anchor", "middle")
@@ -301,8 +302,8 @@ function createYAxis(plot, y) {
     // y axis label
     plot.append("text")
         .attr("transform", "rotate(-90)")
-        .attr("x", -plotheight/2 - 20)
-        .attr("y", 20) //plotheight/2)
+        .attr("x", -UX_CONFIG.plotheight/2 - 20)
+        .attr("y", 20) //UX_CONFIG.plotheight/2)
         .style("fill", "dimgrey")
         //.attr("font-weight", "bold")
         .attr("text-anchor", "middle")
