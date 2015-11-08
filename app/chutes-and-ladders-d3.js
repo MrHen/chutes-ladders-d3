@@ -198,10 +198,11 @@ function animateboard(dset,k) {
 
 //------------------------------------------------
 // Create SVG line plot of board probabilities
-var plotsvgheight = 160
-var plotheight = 100
-var plotsvgwidth = w
-var plotwidth = plotsvgwidth - 80
+
+var plotsvgheight = 160;
+var plotheight = 100;
+var plotsvgwidth = w;
+var plotwidth = plotsvgwidth - 80;
 
 var lineplot = d3.select("#lineplot")
     .append("svg")
@@ -224,73 +225,90 @@ var line = d3.svg.line()
     .x(function(d,i) {return x(i+1);})
     .y(function(d) {return y(d);});
 
-// Add scale / axes
-// x axis
-lineplot.selectAll("line")
-    .data(x.ticks(10))
-    .enter().append("line")
-    .attr("x1", x)
-    .attr("x2", x)
-    .attr("y1", 0)
-    .attr("y2", 100)
-    .style("stroke", "silver")
-    .attr("stroke-opacity", 0.5)
-    .attr("shape-rendering", "crispEdges")
-    .attr("transform", "translate(62,20)");
-// Add x axis tick labels
-lineplot.selectAll(".rule")
-    .data(x.ticks(10))
-    .enter().append("text")
-    .attr("class","xticks")
-    .attr("x", x)
-    .attr("y", plotheight+15)
-    .style("fill", "dimgrey")
-    .attr("text-anchor", "middle")
-    .text(String)
-    .attr("transform", "translate(62,20)");
-// x axis label
-lineplot.append("text")
-    .attr("x", (plotwidth)/2)
-    .attr("y", plotheight+37)
-    .style("fill", "dimgrey")
-    //.attr("font-weight", "bold")
-    .attr("text-anchor", "middle")
-    .text("Position on Game Board")
-    .attr("transform", "translate(62,20)");
+createXAxis(lineplot, x);
+createYAxis(lineplot, y);
 
-// y axis
-var yAxisLeft = d3.svg.axis().scale(y).ticks(4).orient("left");
-lineplot.append("g")
-    .attr("class", "y axis")
-    .attr("transform", "translate(62,20)")
-    .call(yAxisLeft);
-// y axis label
-lineplot.append("text")
-    .attr("transform", "rotate(-90)")
-    .attr("x", -plotheight/2 - 20)
-    .attr("y", 20) //plotheight/2)
-    .style("fill", "dimgrey")
-    //.attr("font-weight", "bold")
-    .attr("text-anchor", "middle")
-    .text("Probability");
+function createXAxis(plot, x) {
+    // Add scale / axes
+    // x axis
+    plot.selectAll("line")
+        .data(x.ticks(10))
+        .enter().append("line")
+        .attr("x1", x)
+        .attr("x2", x)
+        .attr("y1", 0)
+        .attr("y2", 100)
+        .style("stroke", "silver")
+        .attr("stroke-opacity", 0.5)
+        .attr("shape-rendering", "crispEdges")
+        .attr("transform", "translate(62,20)");
 
-// Display the line by appending an svg:path element with the data line created above
-lineplot.append("path")
-    .attr("id","plot")
-    .attr("d", line(dataset0))
-    .attr("stroke", "steelblue")
-    .attr("stroke-width", 2)
-    .attr("fill","none")
-    .attr("transform", "translate(62,20)");
+    // Add x axis tick labels
+    plot.selectAll(".rule")
+        .data(x.ticks(10))
+        .enter().append("text")
+        .attr("class","xticks")
+        .attr("x", x)
+        .attr("y", plotheight+15)
+        .style("fill", "dimgrey")
+        .attr("text-anchor", "middle")
+        .text(String)
+        .attr("transform", "translate(62,20)");
+
+    // x axis label
+    plot.append("text")
+        .attr("x", (plotwidth)/2)
+        .attr("y", plotheight+37)
+        .style("fill", "dimgrey")
+        //.attr("font-weight", "bold")
+        .attr("text-anchor", "middle")
+        .text("Position on Game Board")
+        .attr("transform", "translate(62,20)");
+
+}
+
+function createYAxis(plot, y) {
+    // y axis
+    var yAxisLeft = d3
+        .svg
+        .axis()
+        .scale(y)
+        .ticks(4)
+        .orient("left");
+
+    plot.append("g")
+        .attr("class", "y axis")
+        .attr("transform", "translate(62,20)")
+        .call(yAxisLeft);
+
+    // y axis label
+    plot.append("text")
+        .attr("transform", "rotate(-90)")
+        .attr("x", -plotheight/2 - 20)
+        .attr("y", 20) //plotheight/2)
+        .style("fill", "dimgrey")
+        //.attr("font-weight", "bold")
+        .attr("text-anchor", "middle")
+        .text("Probability");
+
+    // Display the line by appending an svg:path element with the data line created above
+    plot.append("path")
+        .attr("id","plot")
+        .attr("d", line(dataset0))
+        .attr("stroke", "steelblue")
+        .attr("stroke-width", 2)
+        .attr("fill","none")
+        .attr("transform", "translate(62,20)");
+}
 
 // Animate line plot
 function animateline(dset,k) {
     d3.select("#lineplot #plot")
-    .transition()
-        .delay(500*k)
+        .transition()
+        .delay(500 * k)
         .duration(500)
         .attr("d", line(dset))
-    };
+}
 
 
 //--------------------------------------
