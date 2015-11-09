@@ -45,13 +45,18 @@ var chutes = _.filter(transitionPairs, function(v) { return v[0] > v[1];});
 //d20 - 5th gear the numbers 11 through 20 twice
 //d30 - 6th gear the numbers 21 through 30 three times
 
+//var dice = [
+//    [1,2],
+//    [2,3,3,4,4,4],
+//    [4,5,6,6,7,7,8,8],
+//    [7,8,9,10,11,12],
+//    [11,12,13,14,15,16,17,18,19,20],
+//    [21,22,23,24,25,26,27,28,29,30]
+//];
+
 var dice = [
-    [1,2],
-    [2,3,3,4,4,4],
-    [4,5,6,6,7,7,8,8],
-    [7,8,9,10,11,12],
-    [11,12,13,14,15,16,17,18,19,20],
-    [21,22,23,24,25,26,27,28,29,30]
+    [1,2,3,4,5,6],
+    [4,5,6,7,8,9]
 ];
 
 function getFraction(a, b) {
@@ -118,8 +123,6 @@ function getBoardsUsingPolicy(T, policy, moves) {
 
     var odds = getOddsUsingPolicy(T, policy);
 
-    console.log('using odds', odds);
-
     for (var i = 0; i < moves; i++) {
         L = math.multiply(L,odds);
 
@@ -148,7 +151,6 @@ var discountFactor = .9;
 function getPolicy(T, V) {
     var policy = _.fill(Array(placeCount), 0);
 
-    console.log("getting policy");
     for(var state = 0; state < placeCount; state++) {
 
         var max = null;
@@ -187,7 +189,6 @@ function nextPolicy(policies, T, V) {
 function getValues(T, policy, old) {
     var values = _.fill(Array(placeCount), 0);
 
-    console.log("getting values");
     for (var state = 0; state < placeCount; state++) {
         var action = policy[state];
 
@@ -224,7 +225,6 @@ function findOptimalPolicy(T) {
     while(max && !nextPolicy(policies, T, _.last(V))) {
         console.log("new policy", max);
         while(--max && !nextValues(V, T, _.last(policies))) {
-            console.log("new values", max);
         }
     }
 
@@ -237,7 +237,14 @@ function getReward(start, end) {
 
 var T = _.map(dice, function(die) { return getTransitions(placeCount, transitions, die)});
 
-var boards = getBoards(T[1], 50);
+var t_boards = _.map(T, function(transitions) { return getBoards(transitions, 50)});
+
+var boards = t_boards[1];
+
+var iterate = findOptimalPolicy(T);
+var optimal_board = getBoardsUsingPolicy(T, _.last(iterate.policies), 50);
+
+var diff = math.subtract(optimal_board, t_boards[0]);
 
 function listEquals(a, b) {
     if (a && b) {

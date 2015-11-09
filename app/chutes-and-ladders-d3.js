@@ -49,12 +49,20 @@ createFinishLabel(board);
 createStartLabel(board);
 
 var saved;
+var cur = 0;
+var autoplay = true;
 // Loop through JSON imported data
 d3.json("markovboards.json",function(json){
     saved = json;
     if (boards) {
         console.log('loading data from places', boards.length);
-        board.on("click", function(){return animateboardloop(boards);});
+        board.on("click", function(){
+            if (autoplay) {
+                return animateboardloop(boards);
+            }
+
+            return animateboardloop(boards, cur, ++cur);
+        });
     } else {
         console.log('loading data from .json', json.length);
         board.on("click", function(){return animateboardloop(json);});
@@ -197,25 +205,37 @@ function animatestart(delay) {
 // Board animation test
 //board.on("click", function(){return animateboardloop(dsets);});
 
-function animateboardloop(dsets) {
+function animateboardloop(dsets, start, end) {
     var delay = 500;
+    if (!start || start < 0) {
+        start = 0;
+    }
+    if (!end || end > dsets.length) {
+        end = dsets.length;
+    }
+
     animatestart(delay);
-    for (var k in dsets) {
-        animateboard(dsets[k], k, delay);
-        animateline(dsets[k], k, delay);
-        animatecounter(k, delay);
-        animatewin(dsets[k], k, delay);
+    for (var k = start; k < end; k++) {
+        animateboard(dsets[k], k - start, delay);
+        animateline(dsets[k], k - start, delay);
+        animatecounter(k - start, delay);
+        animatewin(dsets[k], k - start, delay);
     }
 }
 
-function animateboard(dset,k, delay) {
+function animateboard(dset, k, delay) {
     var max = _.max(dset);
+    var min = _.min(dset);
     rects.data(dset)
         .transition()
         .delay(delay * k)
         .duration(delay)
         .attr("fill", function (d) {
-            return "rgb(255," + Math.round(255 * (1 - d/max)) + "," + Math.round(255 * (1 - d/max)) + ")";
+            if (d >= 0) {
+                return "rgb(255," + Math.round(255 * (1 - d/max)) + "," + Math.round(255 * (1 - d/max)) + ")";
+            } else {
+                return "rgb(" + Math.round(255 * (1 - d/min)) + "," + Math.round(255 * (1 - d/min)) + ",255)";
+            }
         });
 }
 
