@@ -242,22 +242,29 @@ function animateboard(dset, k, delay) {
 //------------------------------------------------
 // Create SVG line plot of board probabilities
 
-var lineplot = d3.select("#lineplot")
+var lineplot = d3
+    .select("#lineplot")
     .append("svg")
     .attr("width", UX_CONFIG.plotsvgwidth)
     .attr("height", UX_CONFIG.plotsvgheight);
 
 // X scale will fit values from 1-100 within pixels 0-width
-var x = d3.scale.linear()
+var x = d3
+    .scale
+    .linear()
     .domain([1, 100])
     .range([0, UX_CONFIG.plotwidth]);
 // Y scale will fit values from 0-1 within pixels 0-100
-var y = d3.scale.linear()
+var y = d3
+    .scale
+    .linear()
     .domain([0, 1])
     .range([UX_CONFIG.plotheight, 0]);
 
 // Create a line object
-var line = d3.svg.line()
+var line = d3
+    .svg
+    .line()
     .interpolate("basis") // Spline interpolation
     // assign the X function to plot the line
     .x(function(d,i) {return x(i+1);})
@@ -369,11 +376,11 @@ var counter = d3.select("#counter")
 // Animate counter
 function animatecounter(k, delay) {
     d3.select("#counter text")
-    .transition()
+        .transition()
         .delay(delay * k)
         .duration(delay)
-        .text(parseInt(k)+1)
-    };
+        .text(parseInt(k) + 1)
+}
 
 //--------------------------------------
 // Win display (percent chance)
