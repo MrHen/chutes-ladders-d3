@@ -1,6 +1,6 @@
 var cells = placeCount - 1;
 var cols = 10;
-var rows = cells / 10;
+var rows = Math.ceil(cells / 10);
 
 // Board parameters
 var UX_CONFIG = {
@@ -9,7 +9,7 @@ var UX_CONFIG = {
     boardwidth: 50 * cols,
 
     colors: {
-        chutes: 'tomato',
+        chutes: 'blue',
         ladders: 'yellowgreen'
     },
 
@@ -224,8 +224,8 @@ function animateboardloop(dsets, start, end) {
 }
 
 function animateboard(dset, k, delay) {
-    var max = _.max(dset);
-    var min = _.min(dset);
+    var max = _.max(dset) || 1;
+    var min = _.min(dset) || -1;
     rects.data(dset)
         .transition()
         .delay(delay * k)
@@ -405,5 +405,229 @@ function animatewin(dset, k, delay) {
     .transition()
         .delay(delay * k)
         .duration(delay)
-        .text((parseFloat(dset[UX_CONFIG.cells - 1])*100).toFixed(2) + "%")
+        .text((parseFloat(dset[UX_CONFIG.cells - 2])*100).toFixed(2) + "%")
     };
+
+// Chord diagram
+
+var sixColors = ['#f0f9e8','#ccebc5','#a8ddb5','#7bccc4','#43a2ca','#0868ac'];
+
+function buildChord(matrix) {
+    document.getElementById('chord').innerHTML = '';
+    var chord = d3.layout.chord()
+        .padding(.01)
+        //.sortGroups(d3.ascending)
+        .sortSubgroups(d3.ascending)
+        .matrix(matrix);
+
+    var width = 960,
+        height = 800,
+        innerRadius = Math.min(width, height) * .3,
+        outerRadius = innerRadius * 1.1;
+
+    var fill = d3.scale.ordinal()
+        .domain(d3.range(sixColors.length))
+        .range(sixColors);
+
+    var svg = d3.select("#chord").append("svg")
+        .attr("width", width)
+        .attr("height", height)
+        .append("g")
+        .attr("transform", "translate(" + width / 2 + "," + height / 2 + ")");
+
+    svg.append("g").selectAll("path")
+        .data(chord.groups)
+        .enter().append("path")
+        .style("fill", function(d) {
+            //console.log("ah", d);
+            return fill(d.index % sixColors.length);
+        })
+        .style("stroke", function(d) {
+            //console.log("oh", d);
+            return fill(d.index % sixColors.length);
+        })
+        .attr("d", d3.svg.arc().innerRadius(innerRadius).outerRadius(outerRadius))
+        .on("mouseover", fade(.1))
+        .on("mouseout", fade(1));
+
+    var ticks = svg.append("g").selectAll("g")
+        .data(chord.groups)
+        .enter().append("g").selectAll("g")
+        .data(groupTicks)
+        .enter().append("g")
+        .attr("transform", function(d) {
+            return "rotate(" + (d.angle * 180 / Math.PI - 90) + ")"
+                   + "translate(" + outerRadius + ",0)";
+        });
+
+    ticks.append("line")
+        .attr("x1", 1)
+        .attr("y1", 0)
+        .attr("x2", 5)
+        .attr("y2", 0)
+        .style("stroke", "#000");
+
+    ticks.append("text")
+        .attr("x", 8)
+        .attr("dy", ".35em")
+        .attr("transform", function(d) { return d.angle > Math.PI ? "rotate(180)translate(-16)" : null; })
+        .style("text-anchor", function(d) { return d.angle > Math.PI ? "end" : null; })
+        .text(function(d) { return d.label; });
+
+    svg.append("g")
+        .attr("class", "chord")
+        .selectAll("path")
+        .data(chord.chords)
+        .enter().append("path")
+        .attr("d", d3.svg.chord().radius(innerRadius))
+        .style("fill", function(d) { return fill(d.target.index); })
+        .style("opacity", 1);
+
+    // Returns an array of tick angles and labels, given a group.
+    function groupTicks(d) {
+        //console.log("uh", d);
+        //var k = (d.endAngle - d.startAngle) / d.value;
+        //return d3.range(0, (d.value * 100) % 100).map(function(v, i) {
+        //    return {
+        //        angle: v * k + d.startAngle,
+        //        label: d.index
+        //    };
+        //});
+        return [
+            {
+                angle: (d.startAngle + d.endAngle) / 2,
+                label: d.index
+            }
+        ];
+    }
+
+    //Returns an event handler for fading a given chord group.
+    function fade(opacity) {
+        return function(g, i) {
+            svg.selectAll(".chord path")
+                .filter(function(d) { return d.source.index != i && d.target.index != i; })
+                .transition()
+                .style("opacity", opacity);
+        };
+    }
+}
+
+// http://bl.ocks.org/mbostock/1044242
+function buildEdgeBundle(transitionMatrix) {
+    var diameter = 960,
+        radius = diameter / 2,
+        innerRadius = radius - 120;
+
+    var cluster = d3.layout.cluster()
+        .size([360, innerRadius])
+        .sort(null)
+        .value(function(d) { return d.size; });
+
+    var bundle = d3.layout.bundle();
+
+    var line = d3.svg.line.radial()
+        .interpolate("bundle")
+        .tension(.85)
+        .radius(function(d) { return d.y; })
+        .angle(function(d) {
+            console.log('line angle', d);
+            return d.x / 180 * Math.PI;
+        });
+
+    var svg = d3.select("#chord").append("svg")
+        .attr("width", diameter)
+        .attr("height", diameter)
+        .append("g")
+        .attr("transform", "translate(" + radius + "," + radius + ")");
+
+    //d3.json("readme-flare-imports.json", function(error, classes) {
+    //    if (error) throw error;
+
+        var nodes = cluster.nodes(packageHierarchy(transitionMatrix)),
+            links = packageImports(nodes);
+
+        svg.selectAll(".link")
+            .data(bundle(links))
+            .enter().append("path")
+            .attr("class", "link")
+            .attr("d", line);
+
+        svg.selectAll(".node")
+            .data(nodes.filter(function(n) { return !n.children; }))
+            .data(nodes)
+            .enter().append("g")
+            .attr("class", "node")
+            .attr("transform", function(d) { return "rotate(" + (d.x - 90) + ")translate(" + d.y + ")"; })
+            .append("text")
+            .attr("dx", function(d) { return d.x < 180 ? 8 : -8; })
+            .attr("dy", ".31em")
+            .attr("text-anchor", function(d) { return d.x < 180 ? "start" : "end"; })
+            .attr("transform", function(d) { return d.x < 180 ? null : "rotate(180)"; })
+            .text(function(d) { return d.key; });
+    //});
+
+    d3.select(self.frameElement).style("height", diameter + "px");
+
+// Lazily construct the package hierarchy from class names.
+    function packageHierarchy(classes) {
+        var map = {};
+
+        function find(name, data) {
+            var node = map[name];
+            if (!node) {
+                node = map[name] = data || {name: name, children: []};
+                if (name > 0) {
+                    node.parent = find(name - 1);
+                    node.parent.children.push(node);
+                    node.key = name;
+                }
+            }
+            return node;
+        }
+
+        for(var i = 0; i < classes.length; i++) {
+            find(i, {name: i, children: [], transitions: classes[i], size: i});
+        }
+        //classes.forEach(function(d) {
+        //    find(d.name, d);
+        //});
+
+        console.log('packageHierarchy', map);
+        return map[0];
+    }
+
+// Return a list of imports for the given array of nodes.
+    function packageImports(nodes) {
+        var map = {},
+            imports = [];
+
+        // Compute a map from name to node.
+        nodes.forEach(function(d) {
+            map[d.name] = d;
+        });
+
+        // For each import, construct a link from the source to target node.
+        nodes.forEach(function(d) {
+            if (d.transitions) {
+                for (var i = 0; i < d.transitions.length; i++) {
+                    if (d.transitions[i] && d.name !== i) {
+                        imports.push({
+                            source: map[d.name],
+                            target: map[i]
+                        });
+                    }
+                }
+            }
+        });
+        //for(var i = 0; i < nodes.length; i++) {
+        //    for (var j = 0; j < nodes[i].length; j++) {
+        //        if (nodes[i][j]) {
+        //            imports.push({source: map[i], target: map[j]});
+        //        }
+        //    }
+        //}
+
+        console.log('packageImports', imports);
+        return imports;
+    }
+}
