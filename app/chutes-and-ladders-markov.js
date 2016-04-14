@@ -8,7 +8,12 @@ var config = {
     loop: false
 };
 
-var placeCount = 100 + 1;
+var placeCount = 100 + 2;
+var crashZone = placeCount - 1;
+var finish = placeCount - 2;
+
+var places = _.range(2, placeCount - 1); // don't let arrows hit 0, 1 or 100
+var transition_count = 0;
 
 var transitions = {
     98:78,
@@ -33,6 +38,26 @@ var transitions = {
     80:100
 };
 
+for(var i = 0; i < transition_count; i++) {
+    var ladder = i % 2 === 0;
+
+    var rand = _.sample(places, 2);
+    places = _.difference(places, rand);
+
+    var high = Math.max(rand[0], rand[1]);
+    var low = Math.min(rand[0], rand[1]);
+
+    if (ladder) {
+        transitions[low] = high;
+    } else {
+        transitions[high] = low;
+    }
+}
+
+var curves = [];
+//curves.push({start:10,end:12});
+//curves.push({start:50,end:54});
+
 var transitionPairs = _.pairs(transitions);
 var ladders = _.filter(transitionPairs, function(v) { return v[0] < v[1];});
 var chutes = _.filter(transitionPairs, function(v) { return v[0] > v[1];});
@@ -54,37 +79,55 @@ var chutes = _.filter(transitionPairs, function(v) { return v[0] > v[1];});
 //    [21,22,23,24,25,26,27,28,29,30]
 //];
 
+//var dice = [
+//    [1,2,3,4],
+//    [3,4,5,6],
+//    [5,6,7,8]
+//];
+
 var dice = [
-    [1,2,3,4,5,6],
-    [4,5,6,7,8,9]
+    [1,2,3,4,5,6]
 ];
 
 function getFraction(a, b) {
     return config.use_fractions ? math.fraction(a, b) : a / b;
 }
 
-function getTransitions(count, jumps, die) {
+function getTransitions(count, jumps, curves, die) {
+    console.log('saw curves', curves);
     var T = [];
 
     for (var i = 0; i < count; i++) {
         var dest = _.fill(Array(placeCount), 0);
-
-        for (var j = 0; j < die.length; j++) {
-            var end = i + die[j];
-            if (end >= placeCount) {
-                if (config.loop) {
-                    end = end % placeCount;
-                } else {
-                    end = placeCount - 1;
+        if (i === crashZone) {
+            dest[crashZone] = 1;
+        } else {
+            for (var j = 0; j < die.length; j++) {
+                var end = i + die[j];
+                if (end >= finish) {
+                    if (config.loop) {
+                        end = end % finish;
+                    } else {
+                        end = finish;
+                    }
                 }
-            }
-            dest[end] = math.add(dest[end], getFraction(1, die.length));
-        }
 
-        for (var key in jumps) {
-            var final = jumps[key];
-            dest[final] = math.add(dest[final], dest[key]);
-            dest[key] = 0;
+                for (var c = 0; c < curves.length; c++) {
+                    if (i < curves[c].start && end > curves[c].end) {
+                        //console.log('skipped curve', i, end);
+                        end = crashZone;
+                        break;
+                    }
+                }
+
+                dest[end] = math.add(dest[end], getFraction(1, die.length));
+            }
+
+            for (var key in jumps) {
+                var final = jumps[key];
+                dest[final] = math.add(dest[final], dest[key]);
+                dest[key] = 0;
+            }
         }
 
         T.push(dest);
@@ -103,13 +146,7 @@ function getBoards(T, moves) {
     for (var i = 0; i < moves; i++) {
         L = math.multiply(L,T);
 
-        if (config.post_convert) {
-            //boards.push(_.map(L, function(n) { return 0 + n; }));
-            boards.push(_.map(L.slice(1), function(n) { return 0 + n; }));
-        } else {
-            //boards.push(L);
-            boards.push(L.slice(1));
-        }
+        boards.push(convertBoard(L));
     }
 
     return boards;
@@ -126,13 +163,7 @@ function getBoardsUsingPolicy(T, policy, moves) {
     for (var i = 0; i < moves; i++) {
         L = math.multiply(L,odds);
 
-        if (config.post_convert) {
-            //boards.push(_.map(L, function(n) { return 0 + n; }));
-            boards.push(_.map(L.slice(1), function(n) { return 0 + n; }));
-        } else {
-            //boards.push(L);
-            boards.push(L.slice(1));
-        }
+        boards.push(convertBoard(L));
     }
 
     return boards;
@@ -206,6 +237,7 @@ function getValues(T, policy, old) {
         values[state] = sum;
     }
 
+    //console.log('values finished', values);
     return values;
 }
 
@@ -218,7 +250,7 @@ function nextValues(V, T, policy) {
 function findOptimalPolicy(T) {
     var policies = [];
     var V = [];
-    V.push(_.fill(Array(101), 0));
+    V.push(_.fill(Array(placeCount), 0));
 
     var max = 1000000;
     console.log("starting...");
@@ -232,16 +264,35 @@ function findOptimalPolicy(T) {
 }
 
 function getReward(start, end) {
-    return (end >= (placeCount - 1)) ? 1 : 0;
+    if (end === finish) {
+        return 1;
+    }
+
+    if (end === crashZone) {
+        return -10;
+    }
+
+    return 0;
 }
 
-var T = _.map(dice, function(die) { return getTransitions(placeCount, transitions, die)});
+function convertBoard(board) {
+    if (config.post_convert) {
+        //boards.push(_.map(L, function(n) { return 0 + n; }));
+        return _.map(board.slice(1), function(n) { return 0 + n; });
+    } else {
+        //boards.push(L);
+        return board.slice(1);
+    }
+}
+
+var T = _.map(dice, function(die) { return getTransitions(placeCount, transitions, curves, die); });
 
 var t_boards = _.map(T, function(transitions) { return getBoards(transitions, 50)});
 
 var boards = t_boards[1];
 
 var iterate = findOptimalPolicy(T);
+var optimal_odds = getOddsUsingPolicy(T, _.last(iterate.policies));
 var optimal_board = getBoardsUsingPolicy(T, _.last(iterate.policies), 50);
 
 var diff = math.subtract(optimal_board, t_boards[0]);
